@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	dlog "log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	// "github.com/rohitpandeydev/microservice/pkg/logger"
+	"github.com/rohitpandeydev/microservices/pkg/logger"
 )
 
 type Message struct {
@@ -21,9 +21,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//  log := logger
+	log := logger.New(logger.INFO)
+
 	router := mux.NewRouter()
-	router.HandleFunc("/", home).Methods("GET")
-	fmt.Println("Server running on port 8080")
-	http.ListenAndServe(":8080", router)
+	router.HandleFunc("/helloworld", home).Methods("GET")
+	log.Info("Starting library webservice on port 8080")
+	dlog.Fatal(http.ListenAndServe(":8080", router))
 }
