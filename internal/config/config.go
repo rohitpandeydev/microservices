@@ -19,7 +19,7 @@ type DBConfig struct {
 func LoadConfig(log *logger.Logger) (*DBConfig, error) {
 	log.Debug("Loading environmnet variable")
 	if err := godotenv.Load(); err != nil {
-		log.Error("Error loading .env file %v, err")
+		log.Error("Error loading .env file %v", err)
 	}
 
 	config := &DBConfig{

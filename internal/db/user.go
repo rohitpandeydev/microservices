@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/rohitpandeydev/microservices/internal/types"
@@ -16,7 +17,6 @@ func (db *DB) GetUser(name string) (types.User, error) {
 	err := db.conn.QueryRow(context.Background(),
 		"SELECT id, username, email, dob, slots FROM library.user WHERE username = $1",
 		name).Scan(&user.ID, &user.Name, &user.Email, &user.DOB, &user.Slots)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return types.User{}, fmt.Errorf("no user found with name %s", name)
@@ -35,7 +35,6 @@ func (db *DB) Login(name string) (string, error) {
 	err := db.conn.QueryRow(context.Background(),
 		"SELECT password FROM library.user WHERE username = $1",
 		name).Scan(&password)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return "", fmt.Errorf("no user found with name %s", name)
@@ -44,4 +43,19 @@ func (db *DB) Login(name string) (string, error) {
 	}
 
 	return password, nil
+}
+
+func (db *DB) RegisterUser(name string, password string, email string, dob time.Time) error {
+	db.logger.Debug("Making new user entry for username %w", name)
+	err := pgx.BeginFunc(context.Background(), db.conn, func(tx pgx.Tx) error {
+		_, err := tx.Exec(
+			context.Background(),
+			"INSERT into library.user(name,password,email,dob,slots) values(name,password,email,dob,0)",
+		)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

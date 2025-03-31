@@ -27,7 +27,7 @@ func CreateToken(username string, log *logger.Logger) (string, error) {
 }
 
 func VerifyToken(tokenString string, log *logger.Logger) error {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		return secretKey, nil
 	})
 	if err != nil {

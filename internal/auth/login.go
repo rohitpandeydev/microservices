@@ -15,19 +15,11 @@ var (
 	ErrEmptyCredentials   = errors.New("username or password cannot be empty")
 )
 
-// LoginResult represents the possible outcomes of a login attempt
-type LoginResult struct {
-	Success bool
-	Token   string
-	User    *types.UserResponse
-	Error   error
-}
-
 // Login authenticates a user and returns a JWT token if successful
-func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) LoginResult {
+func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) types.LoginResult {
 	// Validate input
 	if creds.Username == "" || creds.Password == "" {
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   ErrEmptyCredentials,
 		}
@@ -38,7 +30,7 @@ func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) Log
 	hashedPassword, err := dbClient.Login(creds.Username)
 	if err != nil {
 		log.Error("Database login error: %v", err)
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   fmt.Errorf("authentication failed: %w", err),
 		}
@@ -48,7 +40,7 @@ func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) Log
 	valid, err := checkPasswordHash(creds.Password, hashedPassword, log)
 	if err != nil {
 		log.Error("Password verification error: %v", err)
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   fmt.Errorf("password verification failed: %w", err),
 		}
@@ -56,7 +48,7 @@ func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) Log
 
 	if !valid {
 		log.Warn("Invalid password attempt for user: %s", creds.Username)
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   ErrInvalidCredentials,
 		}
@@ -66,7 +58,7 @@ func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) Log
 	user, err := dbClient.GetUser(creds.Username)
 	if err != nil {
 		log.Error("Failed to get user details: %v", err)
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   fmt.Errorf("failed to get user details: %w", err),
 		}
@@ -81,33 +73,19 @@ func Login(creds types.UserCredentials, dbClient *db.DB, log *logger.Logger) Log
 	token, err := generateToken(claims, log)
 	if err != nil {
 		log.Error("Token generation error: %v", err)
-		return LoginResult{
+		return types.LoginResult{
 			Success: false,
 			Error:   fmt.Errorf("token generation failed: %w", err),
 		}
 	}
 
 	log.Info("Successful login for user: %s", creds.Username)
-	return LoginResult{
+	return types.LoginResult{
 		Success: true,
 		Token:   token,
 		User:    user.ToResponse(),
 		Error:   nil,
 	}
-}
-
-func hashPassword(password string, log *logger.Logger) (string, error) {
-	if password == "" {
-		return "", ErrEmptyCredentials
-	}
-
-	log.Debug("Generating password hash")
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Error("Password hashing failed: %v", err)
-		return "", fmt.Errorf("password hashing failed: %w", err)
-	}
-	return string(bytes), nil
 }
 
 func checkPasswordHash(password, hash string, log *logger.Logger) (bool, error) {

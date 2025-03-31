@@ -4,12 +4,6 @@ import (
 	"time"
 )
 
-type LoginResult struct {
-	Success bool
-	Token   string
-	Error   error
-}
-
 type UserCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -30,6 +24,14 @@ type User struct {
 	Email    string    `json:"email"`
 	DOB      time.Time `json:"dob"`
 	Slots    int32     `json:"slots"`
+}
+
+// LoginResult represents the possible outcomes of a login attempt
+type LoginResult struct {
+	Success bool
+	Token   string
+	User    *UserResponse
+	Error   error
 }
 
 // type for books
